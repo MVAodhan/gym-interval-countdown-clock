@@ -17,8 +17,7 @@ const Stopwatch = () => {
   const [isRunning, setIsRunning] = useState(false);
   const phases = [
     { timeMS: 10000, intervalMinutes: 0 },
-
-    { timeMS: 250000, intervalMinutes: 2 },
+    { timeMS: 120000, intervalMinutes: 0 },
   ];
   const [phaseNum, setPhaseNum] = useState(0);
   const timeMS = phases[0].timeMS;
@@ -44,15 +43,12 @@ const Stopwatch = () => {
   useEffect(() => {
     const currentMinute = Math.floor(time / 60000);
     const totalMinutes = Math.floor(phases[phaseNum]?.timeMS / 60000);
-    // if interval 2 or 5, do some stuff
+    // if interval greater than 0, do some stuff
     // 2 minute interval meaning 1 set every 2 minutes
-    if (
-      phases[phaseNum]?.intervalMinutes === 2 ||
-      phases[phaseNum]?.intervalMinutes === 5
-    ) {
+    if (phases[phaseNum]?.intervalMinutes > 0) {
       // if currentMinute mod interval === 0, do thing
       if (currentMinute % phases[phaseNum]?.intervalMinutes === 0) {
-        if (currentMinute % totalMinutes !== 0) {
+        if (currentMinute % totalMinutes !== 0 && currentMinute > 0) {
           // every 3rd, 2nd or 1st second of minute, do thing
           if (
             currentMinute * 60000 + 3000 === time ||
@@ -61,11 +57,19 @@ const Stopwatch = () => {
           ) {
             numberSound.play();
           }
-
-          // if current minute is even, do thing on 0
-          if (currentMinute * 60000 === time) {
-            goSound.play();
+        } else {
+          if (
+            currentMinute * 60000 + 3000 === time ||
+            currentMinute * 60000 + 2000 === time ||
+            currentMinute * 60000 + 1000 === time
+          ) {
+            numberSound.play();
           }
+        }
+
+        // if current minute is even, do thing on 0
+        if (currentMinute * 60000 === time) {
+          goSound.play();
         }
       }
     }
