@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { Howl } from "howler";
 import { Antonio } from "next/font/google";
@@ -16,12 +16,14 @@ const Stopwatch = () => {
   });
   const [isRunning, setIsRunning] = useState(false);
   const phases = [
-    { timeMS: 10000, intervalMinutes: 0 },
-    { timeMS: 120000, intervalMinutes: 0 },
+    { timeMS: 10000, intervalMinutes: 0, rest: false },
+    { timeMS: 120000, intervalMinutes: 2, rest: true, restMS: 120000 },
   ];
   const [phaseNum, setPhaseNum] = useState(0);
   const timeMS = phases[0].timeMS;
   const [time, setTime] = useState(timeMS);
+
+  const timerRef = useRef<any>();
 
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -30,13 +32,22 @@ const Stopwatch = () => {
 
   const formatTime = (ms: number) => `${getMinutes(ms)}:${getSeconds(ms)}`;
 
+  const logUnits = () => {
+    console.log("time", time);
+    console.log("timeMS", timeMS);
+  };
   useEffect(() => {
-    let interval: any = null;
     if (isRunning) {
-      interval = setInterval(() => setTime((time) => time - 1000), 1000);
+      timerRef.current = setInterval(
+        () => setTime((time) => time - 1000),
+        1000
+      );
     }
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(timerRef.current);
+      console.log("interval cleared");
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
@@ -89,8 +100,6 @@ const Stopwatch = () => {
       setIsRunning(false);
 
       setPhaseNum((prev) => prev + 1);
-      console.log(phases[phaseNum + 1]);
-      console.log(typeof phases[phaseNum + 1]);
 
       if (phases[phaseNum + 1] !== undefined) {
         setTime(phases[phaseNum + 1].timeMS);
@@ -103,7 +112,7 @@ const Stopwatch = () => {
   return (
     <div className=" w-4/5 flex flex-col">
       <div
-        className={`flex justify-center text-[200px] text-[#ff1717] ${inter.className}`}
+        className={`flex flex-col items-center text-[200px] text-[#ff1717] ${inter.className}`}
       >
         {formatTime(time)}
       </div>
