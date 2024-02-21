@@ -16,15 +16,14 @@ const Stopwatch = () => {
   });
   const [isRunning, setIsRunning] = useState(false);
   const phases = [
-    { timeMS: 10000, sets: 1, rests: false },
-    { timeMS: 120000, sets: 1, rests: false },
+    // { timeMS: 120000, sets: 1, rests: false },
     { timeMS: 600000, sets: 5, rests: true, restMs: 60000 },
     { timeMS: 600000, sets: 5, rests: false },
   ];
 
   const [phaseNum, setPhaseNum] = useState(0);
   const timeMS = phases[0].timeMS;
-  const [time, setTime] = useState(timeMS);
+  const [time, setTime] = useState(10000);
   const [isRestPeriod, setIsRestPeriod] = useState(false);
   const [restTime, setRestTime] = useState(0);
   const [setNum, setSetNum] = useState(0);
@@ -86,7 +85,7 @@ const Stopwatch = () => {
   };
 
   const calculatePhases = () => {
-    let finalPhases: {}[] = [];
+    let finalPhases: any[] = [];
     for (let i = 0; i < phases.length; i++) {
       let setsAndRests = calculateSetsAndRests(i);
       finalPhases = [...finalPhases, { times: setsAndRests }];
@@ -115,22 +114,28 @@ const Stopwatch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
-  console.log(allPhases);
+  // console.log("allPhases", allPhases);
+  console.log("allPhases[0]", allPhases[0]);
+
   useEffect(() => {
-    if (time === 3000 || time === 2000 || time === 1000) {
-      numberSound.play();
-    }
-    if (time === 0) {
-      goSound.play();
-      setIsRunning(false);
-    }
+    if (isRunning) {
+      if (time === 3000 || time === 2000 || time === 1000) {
+        numberSound.play();
+      }
+      if (time === 0) {
+        goSound.play();
+      }
 
-    if (time === 0 && allPhases) {
-      setSetNum((prev) => prev + 1);
+      if (time === 0) {
+        setSetNum((prev) => prev + 1);
 
-      if (phases[phaseNum] !== undefined) {
-        setTime(phases[phaseNum + 1].timeMS);
-        setIsRunning(true);
+        if (allPhases[phaseNum].times[setNum] !== undefined) {
+          setTime(allPhases[phaseNum].times[setNum].timeMS);
+        } else {
+          setPhaseNum((prev) => prev + 1);
+          setSetNum(0);
+          setTime(allPhases[phaseNum].times[setNum]);
+        }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
