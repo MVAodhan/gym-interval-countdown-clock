@@ -7,6 +7,28 @@ import { Antonio } from "next/font/google";
 
 const inter = Antonio({ subsets: ["latin"] });
 
+import {
+  Drawer,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DrawerTrigger,
+} from "@/components/ui/drawer";
+
+interface Time {
+  timeMS: number;
+  rest?: boolean; // This property is optional
+}
+
+interface Phase {
+  times?: Time[];
+}
+
+import { Button } from "@/components/ui/button";
+
 const Stopwatch = () => {
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
@@ -16,18 +38,17 @@ const Stopwatch = () => {
   });
   const [isRunning, setIsRunning] = useState(false);
   const phases = [
-    // { timeMS: 120000, sets: 1, rests: false },
-    { timeMS: 600000, sets: 5, rests: true, restMs: 60000 },
-    { timeMS: 600000, sets: 5, rests: false },
+    { timeMS: 120000, sets: 1, rests: false },
+    { timeMS: 120000, sets: 2, rests: true, restMs: 20000 },
+    // { timeMS: 600000, sets: 5, rests: false },
   ];
 
   const [phaseNum, setPhaseNum] = useState(0);
-  const timeMS = phases[0].timeMS;
   const [time, setTime] = useState(10000);
   const [isRestPeriod, setIsRestPeriod] = useState(false);
-  const [restTime, setRestTime] = useState(0);
+
   const [setNum, setSetNum] = useState(0);
-  const [allPhases, setAllPhases] = useState([{}]);
+  const [allPhases, setAllPhases] = useState<Phase[]>([]);
 
   const timerRef = useRef<any>();
 
@@ -85,17 +106,20 @@ const Stopwatch = () => {
   };
 
   const calculatePhases = () => {
-    let finalPhases: any[] = [];
+    let finalPhases: {}[] = [];
     for (let i = 0; i < phases.length; i++) {
       let setsAndRests = calculateSetsAndRests(i);
       finalPhases = [...finalPhases, { times: setsAndRests }];
     }
     return finalPhases;
   };
+
   useEffect(() => {
     let finalPhases = calculatePhases();
 
     setAllPhases(finalPhases);
+
+    console.log(finalPhases);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -114,9 +138,6 @@ const Stopwatch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
-  // console.log("allPhases", allPhases);
-  console.log("allPhases[0]", allPhases[0]);
-
   useEffect(() => {
     if (isRunning) {
       if (time === 3000 || time === 2000 || time === 1000) {
@@ -127,15 +148,22 @@ const Stopwatch = () => {
       }
 
       if (time === 0) {
-        setSetNum((prev) => prev + 1);
-
-        if (allPhases[phaseNum].times[setNum] !== undefined) {
-          setTime(allPhases[phaseNum].times[setNum].timeMS);
-        } else {
-          setPhaseNum((prev) => prev + 1);
-          setSetNum(0);
-          setTime(allPhases[phaseNum].times[setNum]);
-        }
+        // setSetNum((prev) => prev + 1);
+        // const newTime = allPhases[phaseNum].times[setNum].timeMS
+        // if (
+        //   allPhases[phaseNum] &&
+        //   allPhases[phaseNum].times &&
+        //   allPhases[phaseNum].times[setNum] &&
+        //   allPhases[phaseNum].times[setNum].timeMS !== undefined
+        // ) {
+        //   setTime(newTime);
+        // } else {
+        //   setPhaseNum((prev) => prev + 1);
+        //   setSetNum(0);
+        //   // Here you're trying to set the time to a potentially undefined value, which could cause issues.
+        //   // You should provide a default value or handle this case appropriately.
+        //   setTime(allPhases[phaseNum].times[setNum].timeMS);
+        // }
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -146,9 +174,8 @@ const Stopwatch = () => {
       <div
         className={`flex flex-col items-center text-[200px] text-[#ff1717] ${inter.className}`}
       >
-        {isRestPeriod && <div className="text-2xl">REST!</div>}
-        {!isRestPeriod && formatTime(time)}
-        {!isRunning && isRestPeriod && formatTime(restTime)}
+        <div className="text-2xl">SET :{setNum}</div>
+        {formatTime(time)}
       </div>
       <div className="w-full flex justify-between">
         <button onClick={() => setIsRunning(true)}>Start</button>
@@ -165,7 +192,30 @@ const Stopwatch = () => {
         >
           Reset
         </button>
+        <MyDrawer />
       </div>
+    </div>
+  );
+};
+
+const MyDrawer = () => {
+  return (
+    <div>
+      <Drawer>
+        <DrawerTrigger>Open</DrawerTrigger>
+        <DrawerContent>
+          <DrawerHeader>
+            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
+            <DrawerDescription>This action cannot be undone.</DrawerDescription>
+          </DrawerHeader>
+          <DrawerFooter>
+            <Button>Submit</Button>
+            <DrawerClose>
+              <Button variant="outline">Cancel</Button>
+            </DrawerClose>
+          </DrawerFooter>
+        </DrawerContent>
+      </Drawer>
     </div>
   );
 };
