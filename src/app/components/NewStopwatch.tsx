@@ -21,6 +21,10 @@ import {
 import { Button } from "@/components/ui/button";
 
 const Stopwatch = () => {
+  const inputData = [
+    { timeMS: 20000, sets: 4, rests: false },
+    { timeMS: 240000, sets: 4, rests: true, restMs: 20000 },
+  ];
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
   });
@@ -28,24 +32,24 @@ const Stopwatch = () => {
     src: ["countdown_go.mp3"],
   });
   const [isRunning, setIsRunning] = useState(false);
-  const inputData = [
-    { timeMS: 120000, sets: 1, rests: false },
-    { timeMS: 240000, sets: 4, rests: true, restMs: 20000 },
-  ];
 
   const [time, setTime] = useState(0);
 
   const [phaseNum, setPhaseNum] = useState(0);
   const [setNum, setSetNum] = useState(0);
 
-  const [phases, setPhases] = useState<GymSet[][]>();
+  const [phases, setPhases] = useState<Phase[]>([]);
 
   const timerRef = useRef<any>();
 
   interface GymSet {
     timeMS: number;
     rest: boolean;
-    sets: number;
+  }
+
+  interface Phase {
+    numSets: number;
+    sets: GymSet[];
   }
 
   const getMinutes = (ms: number) =>
@@ -58,49 +62,61 @@ const Stopwatch = () => {
   const calculateSets = (timeMS: number, sets: number) => {
     let phaseSets: GymSet[] = [];
     for (let i = 0; i < sets; i++) {
-      phaseSets = [
-        ...phaseSets,
-        { timeMS: timeMS / sets, rest: false, sets: sets },
-      ];
+      phaseSets = [...phaseSets, { timeMS: timeMS / sets, rest: false }];
     }
 
     return phaseSets;
   };
 
-  const calculateRests = (sets: number, restMS: number) => {
+  const calculateRests = (sets: number, restMS: number, rests: boolean) => {
     let phaseRests: GymSet[] = [];
-    for (let i = 0; i < sets - 1; i++) {
-      phaseRests = [...phaseRests, { timeMS: restMS, rest: true, sets: sets }];
-    }
+    let restLen = 0;
 
-    return phaseRests;
-  };
-
-  const calculatePhase = (i: number) => {
-    let phase: GymSet[] = [];
-    let sets = calculateSets(inputData[i].timeMS, inputData[i].sets);
-    let rests: GymSet[] = [];
-    if (inputData[i]) {
-      rests = calculateRests(inputData[i].sets, inputData[i].restMs as number);
-    }
-
-    let total = sets.length + rests.length;
-    for (let i = 0; i < total; i++) {
-      if (i % 2 === 0) {
-        phase = [...phase, sets.shift()!];
-      } else {
-        phase = [...phase, rests.shift()!];
+    if (rests !== false) {
+      for (let i = 0; i < sets - 1; i++) {
+        phaseRests = [...phaseRests, { timeMS: restMS, rest: true }];
+        restLen = restLen + 1;
       }
     }
 
-    return phase;
+    return { phaseRests, restLen };
+  };
+
+  const calculatePhase = (i: number) => {
+    let phaseSets: GymSet[] = [];
+
+    let sets = calculateSets(inputData[i].timeMS, inputData[i].sets);
+
+    let { phaseRests, restLen } = calculateRests(
+      inputData[i].sets,
+      inputData[i].restMs as number,
+      inputData[i].rests
+    );
+
+    let total = sets.length + restLen;
+    if (restLen > 0) {
+      for (let i = 0; i < total; i++) {
+        if (i % 2 === 0) {
+          phaseSets = [...phaseSets, sets.shift()!];
+        }
+        if (i % 2 !== 0 && restLen !== 0) {
+          phaseSets = [...phaseSets, phaseRests.shift()!];
+        }
+      }
+    } else {
+      for (let i = 0; i < total; i++) {
+        phaseSets = [...phaseSets, sets.shift()!];
+      }
+    }
+
+    return { phaseNum: i + 1, sets: [...phaseSets] };
   };
 
   const calculatePhases = () => {
-    let phases: GymSet[][] = [];
+    let phases: Phase[] = [];
     for (let i = 0; i < inputData.length; i++) {
-      let phase = calculatePhase(i);
-      phases = [...phases, phase];
+      let { sets } = calculatePhase(i);
+      phases = [...phases, { numSets: sets.length, sets: sets }];
     }
 
     setPhases(phases);
@@ -143,8 +159,6 @@ const Stopwatch = () => {
 
       if (time === 0) {
         if (currentPhase) {
-          setIsRunning(false);
-          console.log(currentPhase);
         }
       }
     }
@@ -163,7 +177,8 @@ const Stopwatch = () => {
         <button
           onClick={() => {
             setIsRunning(true);
-            setTime(phases![0][0].timeMS);
+            setPhaseNum(0);
+            setTime(phases[phaseNum].sets[0].timeMS);
           }}
         >
           Start
@@ -173,13 +188,17 @@ const Stopwatch = () => {
 
         <button onClick={() => setIsRunning(false)}>Stop</button>
 
-        {/* <button
-          onClick={() => {
-            setPhaseNum(0);
-          }}
-        >
-          Reset
-        </button> */}
+        {
+          <button
+            onClick={() => {
+              setPhaseNum(0);
+              setSetNum(0);
+              setTime(0);
+            }}
+          >
+            Reset
+          </button>
+        }
         <MyDrawer />
       </div>
     </div>
