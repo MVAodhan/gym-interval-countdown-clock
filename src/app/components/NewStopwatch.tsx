@@ -32,7 +32,7 @@ interface Phase {
 const Stopwatch = () => {
   const inputData = [
     { timeMS: 10000, sets: 2, rests: false, restMS: 0 },
-    // { timeMS: 40000, sets: 4, rests: true, restMS: 5000 },
+    { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
@@ -160,8 +160,6 @@ const Stopwatch = () => {
 
       if (time === 3000 || time === 2000 || time === 1000) {
         numberSound.play();
-        console.log(setNumRef.current);
-        console.log("next set", nextSet);
       }
       if (time === 0 && setNumRef.current < sets?.length!) {
         goSound.play();
@@ -175,7 +173,26 @@ const Stopwatch = () => {
         setIsRunning(false);
         setTime(0);
       }
+      if (time === 0 && setNumRef.current === sets?.length) {
+        // Move to the next phase
+        phaseNumRef.current = phaseNumRef.current + 1;
+        // Reset the set number for the new phase
+        setNumRef.current = 0;
+        // Check if there are more phases
+        if (phaseNumRef.current < phases.length) {
+          // Get the first set of the new phase
+          let { sets: newPhaseSets } = getCurrentPhase();
+          // Set the timer to the time of the first set of the new phase
+          setTime(newPhaseSets[0].timeMS ?? 0);
+          setIsRunning(true);
+        } else {
+          // If all phases are complete, stop the timer
+          setIsRunning(false);
+          setTime(0);
+        }
+      }
     }
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time]);
 
@@ -185,7 +202,9 @@ const Stopwatch = () => {
         className={`flex flex-col items-center text-[200px] text-[#ff1717] ${inter.className}`}
       >
         <div className="text-2xl"> {isRunning && `PHASE : `}</div>
-        <div className="text-2xl">{isRunning && `SET : `}</div>
+        <div className="text-2xl">
+          {isRunning && `SET : ${setNumRef.current + 1}`}
+        </div>
 
         {formatTime(time)}
       </div>
