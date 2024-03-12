@@ -33,6 +33,7 @@ const Stopwatch = () => {
   const inputData = [
     { timeMS: 10000, sets: 2, rests: false, restMS: 0 },
     { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
+    { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
@@ -49,6 +50,7 @@ const Stopwatch = () => {
 
   let phaseNumRef = useRef(0);
   let setNumRef = useRef(0);
+  let displaySets = useRef(0);
 
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -165,6 +167,9 @@ const Stopwatch = () => {
         goSound.play();
 
         setNumRef.current = setNumRef.current + 1;
+        if (!nextSet?.rest) {
+          displaySets.current = displaySets.current + 1;
+        }
 
         setTime(nextSet?.timeMS ?? 0);
       }
@@ -185,6 +190,7 @@ const Stopwatch = () => {
           // Set the timer to the time of the first set of the new phase
           setTime(newPhaseSets[0].timeMS ?? 0);
           setIsRunning(true);
+          displaySets.current = 0;
         } else {
           // If all phases are complete, stop the timer
           setIsRunning(false);
@@ -201,9 +207,12 @@ const Stopwatch = () => {
       <div
         className={`flex flex-col items-center text-[200px] text-[#ff1717] ${inter.className}`}
       >
-        <div className="text-2xl"> {isRunning && `PHASE : `}</div>
         <div className="text-2xl">
-          {isRunning && `SET : ${setNumRef.current + 1}`}
+          {" "}
+          {isRunning && `PHASE : ${phaseNumRef.current + 1}`}
+        </div>
+        <div className="text-2xl">
+          {isRunning && `SET : ${displaySets.current + 1}`}
         </div>
 
         {formatTime(time)}
