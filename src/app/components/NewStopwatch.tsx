@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 import { Howl } from "howler";
 import { Antonio } from "next/font/google";
@@ -25,10 +25,6 @@ interface GymSet {
   rest: boolean;
 }
 
-interface Phase {
-  numSets: number;
-  sets: GymSet[];
-}
 const Stopwatch = () => {
   const inputData = [
     { timeMS: 10000, sets: 2, rests: false, restMS: 0 },
@@ -44,7 +40,9 @@ const Stopwatch = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   const [time, setTime] = useState(0);
-  const [phases, setPhases] = useState<Phase[]>([]);
+  const [phases, setPhases] = useState<any[]>([]);
+  const [phaseTransition, setPhaseTransition] = useState(true);
+  const [transitionMS, setTransitionMS] = useState(6000);
 
   const timerRef = useRef<any>();
 
@@ -113,15 +111,32 @@ const Stopwatch = () => {
   };
 
   const calculatePhases = () => {
-    let phases: Phase[] = [];
+    let phases: any[] = [];
     for (let i = 0; i < inputData.length; i++) {
       let { sets } = calculatePhase(i);
-      phases = [...phases, { numSets: sets.length, sets: sets }];
+      phases = [...phases!, { numSets: sets.length, sets: sets }];
     }
 
-    return phases;
+    return phases!;
+  };
+  const calculateTransitions = (phases: any) => {
+    let transitions: any = [];
+    for (let i = 0; i < phases.length - 1; i++) {
+      transitions = [
+        ...transitions,
+        { transition: true, timesMS: transitionMS },
+      ];
+    }
+
+    return transitions;
   };
 
+  const addTransitions = () => {
+    let newPhases: any[] = [];
+    let phases = calculatePhases();
+
+    return newPhases;
+  };
   const getCurrentPhase = () => {
     let current;
     let sets;
@@ -136,10 +151,26 @@ const Stopwatch = () => {
 
   useEffect(() => {
     let phases = calculatePhases();
-    setPhases(phases);
+    let transitions = calculateTransitions(phases);
+    // console.log(transitions)
 
+    if (!phaseTransition) {
+      setPhases(phases);
+    } else {
+      let newPhases: any = [];
+      for (let i = 0; phases.length + transitions.length; i++) {
+        if (i % 2 === 0) {
+          newPhases = [...newPhases, phases.shift()];
+        } else {
+          newPhases = [...newPhases, transitions.shift()];
+        }
+      }
+      setPhases(newPhases);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  console.log("phases", phases);
 
   useEffect(() => {
     if (isRunning) {
@@ -188,7 +219,7 @@ const Stopwatch = () => {
           // Get the first set of the new phase
           let { sets: newPhaseSets } = getCurrentPhase();
           // Set the timer to the time of the first set of the new phase
-          setTime(newPhaseSets[0].timeMS ?? 0);
+          setTime(newPhaseSets![0].timeMS ?? 0);
           setIsRunning(true);
           displaySets.current = 0;
         } else {
