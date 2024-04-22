@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
 import { Howl } from "howler";
 import { Antonio } from "next/font/google";
@@ -28,8 +28,8 @@ interface GymSet {
 const Stopwatch = () => {
   const inputData = [
     { timeMS: 10000, sets: 2, rests: false, restMS: 0 },
-    { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
-    { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
+    { timeMS: 20000, sets: 2, rests: false, restMS: 5000 },
+    // { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
@@ -41,15 +41,13 @@ const Stopwatch = () => {
 
   const [time, setTime] = useState(0);
   const [phases, setPhases] = useState<any[]>([]);
-  const [phaseTransition, setPhaseTransition] = useState(true);
+  const [phaseTransition, setPhaseTransition] = useState(false);
   const [transitionMS, setTransitionMS] = useState(6000);
 
   const timerRef = useRef<any>();
 
-  let phaseNumRef = useRef(0);
-  let setNumRef = useRef(0);
-  let displaySets = useRef(0);
-
+  const setRef = useRef(0);
+  const phaseRef = useRef(0);
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
   const getSeconds = (ms: number) =>
@@ -131,18 +129,12 @@ const Stopwatch = () => {
     return transitions;
   };
 
-  const addTransitions = () => {
-    let newPhases: any[] = [];
-    let phases = calculatePhases();
-
-    return newPhases;
-  };
-  const getCurrentPhase = () => {
+  const getCurrentPhase: any = () => {
     let current;
     let sets;
 
     if (phases.length > 0) {
-      current = phases[phaseNumRef.current];
+      current = phases[phaseRef.current];
       sets = current.sets;
     }
 
@@ -152,7 +144,6 @@ const Stopwatch = () => {
   useEffect(() => {
     let phases = calculatePhases();
     let transitions = calculateTransitions(phases);
-    // console.log(transitions)
 
     if (!phaseTransition) {
       setPhases(phases);
@@ -170,8 +161,6 @@ const Stopwatch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  console.log("phases", phases);
-
   useEffect(() => {
     if (isRunning) {
       timerRef.current = setInterval(
@@ -188,50 +177,38 @@ const Stopwatch = () => {
 
   useEffect(() => {
     if (isRunning) {
-      let { sets } = getCurrentPhase();
-      let nextSet = sets?.[setNumRef.current + 1];
-
+      let { sets, current } = getCurrentPhase();
+      console.log({
+        sets,
+        current,
+      });
+      // Handles sound
       if (time === 3000 || time === 2000 || time === 1000) {
         numberSound.play();
       }
-      if (time === 0 && setNumRef.current < sets?.length!) {
+      if (time === 0) {
+        setRef.current = setRef.current + 1;
         goSound.play();
 
-        setNumRef.current = setNumRef.current + 1;
-        if (!nextSet?.rest) {
-          displaySets.current = displaySets.current + 1;
+        if (setRef.current <= sets.length - 1) {
+          setTime(sets[setRef.current].timeMS);
         }
-
-        setTime(nextSet?.timeMS ?? 0);
-      }
-
-      if (time === 0 && setNumRef.current === sets?.length) {
-        setIsRunning(false);
-        setTime(0);
-      }
-      if (time === 0 && setNumRef.current === sets?.length) {
-        // Move to the next phase
-        phaseNumRef.current = phaseNumRef.current + 1;
-        // Reset the set number for the new phase
-        setNumRef.current = 0;
-        // Check if there are more phases
-        if (phaseNumRef.current < phases.length) {
-          // Get the first set of the new phase
-          let { sets: newPhaseSets } = getCurrentPhase();
-          // Set the timer to the time of the first set of the new phase
-          setTime(newPhaseSets![0].timeMS ?? 0);
-          setIsRunning(true);
-          displaySets.current = 0;
-        } else {
-          // If all phases are complete, stop the timer
-          setIsRunning(false);
-          setTime(0);
+        if (setRef.current === sets.length) {
+          phaseRef.current = phaseRef.current + 1;
+          setRef.current = 0;
+          if (phaseRef.current === phases.length) {
+            setIsRunning(false);
+          } else {
+            setTime(phases[phaseRef.current].sets[0].timeMS);
+          }
         }
       }
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time]);
+
+  console.log(phases);
 
   return (
     <div className=" w-4/5 flex flex-col">
@@ -240,10 +217,10 @@ const Stopwatch = () => {
       >
         <div className="text-2xl">
           {" "}
-          {isRunning && `PHASE : ${phaseNumRef.current + 1}`}
+          {isRunning && `PHASE : ${phaseRef.current + 1}`}
         </div>
         <div className="text-2xl">
-          {isRunning && `SET : ${displaySets.current + 1}`}
+          {isRunning && `SET : ${setRef.current + 1}`}
         </div>
 
         {formatTime(time)}
@@ -262,7 +239,17 @@ const Stopwatch = () => {
 
         <button onClick={() => setIsRunning(false)}>Stop</button>
 
-        {<button onClick={() => {}}>Reset</button>}
+        {
+          <button
+            onClick={() => {
+              setTime(0);
+              setRef.current = 0;
+              phaseRef.current = 0;
+            }}
+          >
+            Reset
+          </button>
+        }
         <MyDrawer />
       </div>
     </div>
