@@ -27,8 +27,8 @@ interface GymSet {
 
 const Stopwatch = () => {
   const inputData = [
-    { timeMS: 10000, sets: 2, rests: false, restMS: 0 },
-    { timeMS: 20000, sets: 2, rests: false, restMS: 5000 },
+    { timeMS: 10000, sets: 2, rests: true, restMS: 15000 },
+    // { timeMS: 20000, sets: 2, rests: true, restMS: 15000 },
     // { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
@@ -43,10 +43,12 @@ const Stopwatch = () => {
   const [phases, setPhases] = useState<any[]>([]);
   const [phaseTransition, setPhaseTransition] = useState(false);
   const [transitionMS, setTransitionMS] = useState(6000);
+  const [isRest, setIsRest] = useState(false);
 
   const timerRef = useRef<any>();
 
   const setRef = useRef(0);
+  const setDisplayRef = useRef(0);
   const phaseRef = useRef(0);
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -178,16 +180,20 @@ const Stopwatch = () => {
   useEffect(() => {
     if (isRunning) {
       let { sets, current } = getCurrentPhase();
-      console.log({
-        sets,
-        current,
-      });
+      if (sets[setRef.current].rest) {
+        setIsRest(true);
+      } else {
+        setIsRest(false);
+      }
       // Handles sound
       if (time === 3000 || time === 2000 || time === 1000) {
         numberSound.play();
       }
       if (time === 0) {
         setRef.current = setRef.current + 1;
+        if (sets[setRef.current] && !sets[setRef.current].rest) {
+          setDisplayRef.current = setDisplayRef.current + 1;
+        }
         goSound.play();
 
         if (setRef.current <= sets.length - 1) {
@@ -217,11 +223,12 @@ const Stopwatch = () => {
       >
         <div className="text-2xl">
           {" "}
-          {isRunning && `PHASE : ${phaseRef.current + 1}`}
+          {isRunning && !isRest && `PHASE : ${phaseRef.current + 1}`}
         </div>
         <div className="text-2xl">
-          {isRunning && `SET : ${setRef.current + 1}`}
+          {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
         </div>
+        <div className="text-2xl">{isRest && `REST PERIOD`}</div>
 
         {formatTime(time)}
       </div>
