@@ -28,7 +28,7 @@ interface GymSet {
 const Stopwatch = () => {
   const inputData = [
     { timeMS: 10000, sets: 2, rests: true, restMS: 15000 },
-    // { timeMS: 20000, sets: 2, rests: true, restMS: 15000 },
+    // { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
     // { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
@@ -119,6 +119,7 @@ const Stopwatch = () => {
 
     return phases!;
   };
+
   const calculateTransitions = (phases: any) => {
     let transitions: any = [];
     for (let i = 0; i < phases.length - 1; i++) {
@@ -133,14 +134,12 @@ const Stopwatch = () => {
 
   const getCurrentPhase: any = () => {
     let current;
-    let sets;
 
     if (phases.length > 0) {
       current = phases[phaseRef.current];
-      sets = current.sets;
     }
 
-    return { current, sets };
+    return { current };
   };
 
   useEffect(() => {
@@ -177,44 +176,31 @@ const Stopwatch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
 
+  const handleSet = (current: { numSets: number; sets: GymSet[] }) => {
+    current.sets.shift();
+    if (current.sets.length === 0) {
+      setIsRunning(false);
+      return;
+    }
+    setTime(current.sets[0].timeMS);
+  };
+
   useEffect(() => {
     if (isRunning) {
-      let { sets, current } = getCurrentPhase();
-      if (sets[setRef.current].rest) {
-        setIsRest(true);
-      } else {
-        setIsRest(false);
-      }
+      let { current } = getCurrentPhase();
       // Handles sound
       if (time === 3000 || time === 2000 || time === 1000) {
         numberSound.play();
       }
       if (time === 0) {
         setRef.current = setRef.current + 1;
-        if (sets[setRef.current] && !sets[setRef.current].rest) {
-          setDisplayRef.current = setDisplayRef.current + 1;
-        }
         goSound.play();
-
-        if (setRef.current <= sets.length - 1) {
-          setTime(sets[setRef.current].timeMS);
-        }
-        if (setRef.current === sets.length) {
-          phaseRef.current = phaseRef.current + 1;
-          setRef.current = 0;
-          if (phaseRef.current === phases.length) {
-            setIsRunning(false);
-          } else {
-            setTime(phases[phaseRef.current].sets[0].timeMS);
-          }
-        }
+        handleSet(current);
       }
     }
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time]);
-
-  console.log(phases);
 
   return (
     <div className=" w-4/5 flex flex-col">
