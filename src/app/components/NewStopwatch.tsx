@@ -182,7 +182,14 @@ const Stopwatch = () => {
       setIsRunning(false);
       return;
     }
+
     setTime(current.sets[0].timeMS);
+    if (current.sets[0].rest) {
+      setIsRest(true);
+    } else {
+      setIsRest(false);
+      setDisplayRef.current = setDisplayRef.current + 1;
+    }
   };
 
   useEffect(() => {
@@ -207,14 +214,14 @@ const Stopwatch = () => {
       <div
         className={`flex flex-col items-center text-[200px] text-[#ff1717] ${inter.className}`}
       >
-        <div className="text-2xl">
+        <div className="text-4xl">
           {" "}
           {isRunning && !isRest && `PHASE : ${phaseRef.current + 1}`}
         </div>
-        <div className="text-2xl">
+        <div className="text-4xl">
           {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
         </div>
-        <div className="text-2xl">{isRest && `REST PERIOD`}</div>
+        <div className="text-4xl">{isRest && `REST`}</div>
 
         {formatTime(time)}
       </div>
