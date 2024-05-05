@@ -27,8 +27,8 @@ interface GymSet {
 
 const Stopwatch = () => {
   const inputData = [
-    { timeMS: 10000, sets: 2, rests: true, restMS: 15000 },
-    // { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
+    { timeMS: 10000, sets: 2, rests: true, restMS: 10000 },
+    { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
     // { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
@@ -44,11 +44,11 @@ const Stopwatch = () => {
   const [phaseTransition, setPhaseTransition] = useState(false);
   const [transitionMS, setTransitionMS] = useState(6000);
   const [isRest, setIsRest] = useState(false);
-
+  const [displaySet, setDisplaySet] = useState(0);
   const timerRef = useRef<any>();
 
   const setRef = useRef(0);
-  const setDisplayRef = useRef(0);
+  // const setDisplayRef = useRef(0);
   const phaseRef = useRef(0);
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -175,20 +175,32 @@ const Stopwatch = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
+  const handlePhase = () => {
+    let { current } = getCurrentPhase();
+    setRef.current = 0;
+    if (current) {
+      handleSet(current);
+    } else {
+      console.log("all phases complete");
+      setIsRunning(false);
+    }
+  };
 
   const handleSet = (current: { numSets: number; sets: GymSet[] }) => {
-    current.sets.shift();
-    if (current.sets.length === 0) {
-      setIsRunning(false);
+    if (current.sets.length === setRef.current) {
+      setDisplaySet((prev) => 0);
+      phaseRef.current = phaseRef.current + 1;
+      handlePhase();
       return;
     }
 
-    setTime(current.sets[0].timeMS);
-    if (current.sets[0].rest) {
+    setTime(current.sets[setRef.current].timeMS);
+    if (current.sets[setRef.current].rest) {
       setIsRest(true);
+      return;
     } else {
+      setDisplaySet((prev) => prev + 1);
       setIsRest(false);
-      setDisplayRef.current = setDisplayRef.current + 1;
     }
   };
 
@@ -200,8 +212,8 @@ const Stopwatch = () => {
         numberSound.play();
       }
       if (time === 0) {
-        setRef.current = setRef.current + 1;
         goSound.play();
+        setRef.current = setRef.current + 1;
         handleSet(current);
       }
     }
@@ -219,7 +231,7 @@ const Stopwatch = () => {
           {isRunning && !isRest && `PHASE : ${phaseRef.current + 1}`}
         </div>
         <div className="text-4xl">
-          {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
+          {isRunning && !isRest && `SET : ${displaySet + 1}`}
         </div>
         <div className="text-4xl">{isRest && `REST`}</div>
 
