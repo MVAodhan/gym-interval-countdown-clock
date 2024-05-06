@@ -48,7 +48,7 @@ const Stopwatch = () => {
   const timerRef = useRef<any>();
 
   const setRef = useRef(0);
-  // const setDisplayRef = useRef(0);
+  const setDisplayRef = useRef(0);
   const phaseRef = useRef(0);
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -178,6 +178,7 @@ const Stopwatch = () => {
   const handlePhase = () => {
     let { current } = getCurrentPhase();
     setRef.current = 0;
+    setDisplayRef.current = 0;
     if (current) {
       handleSet(current);
     } else {
@@ -188,19 +189,21 @@ const Stopwatch = () => {
 
   const handleSet = (current: { numSets: number; sets: GymSet[] }) => {
     if (current.sets.length === setRef.current) {
-      setDisplaySet((prev) => 0);
+      // setDisplaySet(() => 0);
+      // console.log(displaySet);
       phaseRef.current = phaseRef.current + 1;
       handlePhase();
       return;
     }
-
     setTime(current.sets[setRef.current].timeMS);
     if (current.sets[setRef.current].rest) {
       setIsRest(true);
       return;
     } else {
-      setDisplaySet((prev) => prev + 1);
       setIsRest(false);
+    }
+    if (current.sets.indexOf(current.sets[setRef.current]) !== 0) {
+      setDisplayRef.current = setDisplayRef.current + 1;
     }
   };
 
@@ -231,7 +234,7 @@ const Stopwatch = () => {
           {isRunning && !isRest && `PHASE : ${phaseRef.current + 1}`}
         </div>
         <div className="text-4xl">
-          {isRunning && !isRest && `SET : ${displaySet + 1}`}
+          {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
         </div>
         <div className="text-4xl">{isRest && `REST`}</div>
 
