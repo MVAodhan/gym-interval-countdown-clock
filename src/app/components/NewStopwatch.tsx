@@ -40,16 +40,24 @@ const Stopwatch = () => {
   const [isRunning, setIsRunning] = useState(false);
 
   const [time, setTime] = useState(0);
+  const [transitionTime, setTransitionTime] = useState(0);
   const [phases, setPhases] = useState<any[]>([]);
-  const [phaseTransition, setPhaseTransition] = useState(false);
+  const [phaseTransition, setPhaseTransition] = useState(true);
   const [transitionMS, setTransitionMS] = useState(6000);
+
   const [isRest, setIsRest] = useState(false);
-  const [displaySet, setDisplaySet] = useState(0);
+  const [isTransition, setIsTransition] = useState(false);
+
+  const [isTransitionRunning, setIsTransitionRunning] = useState(false);
+
   const timerRef = useRef<any>();
+  const transitionTimerRef = useRef<any>();
 
   const setRef = useRef(0);
   const setDisplayRef = useRef(0);
   const phaseRef = useRef(0);
+  const phaseDisplayRef = useRef(0);
+
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
   const getSeconds = (ms: number) =>
@@ -175,8 +183,43 @@ const Stopwatch = () => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isRunning]);
+
+  const handleTransition = (current: any) => {
+    setIsRunning(false);
+    setTransitionTime(current.timesMS);
+    setIsTransitionRunning(true);
+  };
+
+  useEffect(() => {
+    if (isTransitionRunning) {
+      transitionTimerRef.current = setInterval(
+        () => setTransitionTime((time) => time - 1000),
+        1000
+      );
+    }
+
+    return () => {
+      clearInterval(transitionTimerRef.current);
+    };
+  }, [isTransitionRunning]);
+
+  useEffect(() => {
+    if (isTransitionRunning) {
+      if (transitionTime === 0) {
+        setIsTransitionRunning(false);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [transitionTime]);
+
   const handlePhase = () => {
     let { current } = getCurrentPhase();
+
+    if (current.transition && !isTransitionRunning) {
+      phaseRef.current = phaseRef.current + 1;
+      handleTransition(current);
+      return;
+    }
     setRef.current = 0;
     setDisplayRef.current = 0;
     if (current) {
@@ -189,8 +232,6 @@ const Stopwatch = () => {
 
   const handleSet = (current: { numSets: number; sets: GymSet[] }) => {
     if (current.sets.length === setRef.current) {
-      // setDisplaySet(() => 0);
-      // console.log(displaySet);
       phaseRef.current = phaseRef.current + 1;
       handlePhase();
       return;
@@ -237,8 +278,12 @@ const Stopwatch = () => {
           {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
         </div>
         <div className="text-4xl">{isRest && `REST`}</div>
+        <div className="text-4xl">{isTransition && `Transition`}</div>
 
-        {formatTime(time)}
+        <div className="flex flex-col gap-1">
+          <div>{formatTime(time)}</div>
+          <div>{formatTime(transitionTime)}</div>
+        </div>
       </div>
       <div className="w-full flex justify-between">
         <button
