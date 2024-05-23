@@ -27,9 +27,9 @@ interface GymSet {
 
 const Stopwatch = () => {
   const inputData = [
-    { timeMS: 10000, sets: 2, rests: true, restMS: 10000 },
-    { timeMS: 20000, sets: 2, rests: true, restMS: 5000 },
-    // { timeMS: 60000, sets: 3, rests: true, restMS: 5000 },
+    { timeMS: 12000, sets: 2, rests: true, restMS: 5000 },
+    { timeMS: 14000, sets: 2, rests: true, restMS: 5000 },
+    { timeMS: 24000, sets: 3, rests: true, restMS: 5000 },
   ];
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
@@ -205,8 +205,18 @@ const Stopwatch = () => {
 
   useEffect(() => {
     if (isTransitionRunning) {
+      if (
+        transitionTime === 3000 ||
+        transitionTime === 2000 ||
+        transitionTime === 1000
+      ) {
+        numberSound.play();
+      }
       if (transitionTime === 0) {
+        goSound.play();
         setIsTransitionRunning(false);
+        setIsRunning(true);
+        handlePhase();
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -215,8 +225,17 @@ const Stopwatch = () => {
   const handlePhase = () => {
     let { current } = getCurrentPhase();
 
-    if (current.transition && !isTransitionRunning) {
+    if (!isTransitionRunning) {
       phaseRef.current = phaseRef.current + 1;
+      phaseDisplayRef.current = phaseDisplayRef.current + 1;
+    }
+
+    if (phaseRef.current > phases.length) {
+      setIsRunning(false);
+      return;
+    }
+
+    if (current.transition && !isTransitionRunning) {
       handleTransition(current);
       return;
     }
@@ -272,7 +291,7 @@ const Stopwatch = () => {
       >
         <div className="text-4xl">
           {" "}
-          {isRunning && !isRest && `PHASE : ${phaseRef.current + 1}`}
+          {isRunning && !isRest && `PHASE : ${phaseDisplayRef.current + 1}`}
         </div>
         <div className="text-4xl">
           {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
