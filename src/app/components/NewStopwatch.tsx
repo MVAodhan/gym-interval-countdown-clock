@@ -19,18 +19,27 @@ import {
 } from "@/components/ui/drawer";
 
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface GymSet {
   timeMS: number;
   rest: boolean;
 }
 
+type InputData = {
+  timeMS: number;
+  sets: number;
+  rests: boolean;
+  restMS: number;
+}[];
 const Stopwatch = () => {
-  const inputData = [
+  const inputData: InputData = [
     { timeMS: 12000, sets: 2, rests: true, restMS: 5000 },
     { timeMS: 14000, sets: 2, rests: true, restMS: 5000 },
     { timeMS: 24000, sets: 3, rests: true, restMS: 5000 },
   ];
+  const [inputDataState, setInputDataState] = useState(inputData);
   const numberSound = new Howl({
     src: ["countdown_number.mp3"],
   });
@@ -91,12 +100,12 @@ const Stopwatch = () => {
   const calculatePhase = (i: number) => {
     let phaseSets: GymSet[] = [];
 
-    let sets = calculateSets(inputData[i].timeMS, inputData[i].sets);
+    let sets = calculateSets(inputDataState[i].timeMS, inputDataState[i].sets);
 
     let { phaseRests, restLen } = calculateRests(
-      inputData[i].sets,
-      inputData[i].restMS,
-      inputData[i].rests
+      inputDataState[i].sets,
+      inputDataState[i].restMS,
+      inputDataState[i].rests
     );
 
     let total = sets.length + restLen;
@@ -118,9 +127,10 @@ const Stopwatch = () => {
     return { phaseNum: i + 1, sets: [...phaseSets] };
   };
 
+  // inputDataState edited below and above
   const calculatePhases = () => {
     let phases: any[] = [];
-    for (let i = 0; i < inputData.length; i++) {
+    for (let i = 0; i < inputDataState.length; i++) {
       let { sets } = calculatePhase(i);
       phases = [...phases!, { numSets: sets.length, sets: sets }];
     }
@@ -341,10 +351,10 @@ const MyDrawer = () => {
       <Drawer>
         <DrawerTrigger>Open</DrawerTrigger>
         <DrawerContent>
-          <DrawerHeader>
-            <DrawerTitle>Are you absolutely sure?</DrawerTitle>
-            <DrawerDescription>This action cannot be undone.</DrawerDescription>
+          <DrawerHeader className="flex justify-center">
+            <DrawerTitle>Set Phases, Sets and Rests </DrawerTitle>
           </DrawerHeader>
+          <div className="w-full flex flex-col items-center"></div>
           <DrawerFooter>
             <Button>Submit</Button>
             <DrawerClose>
