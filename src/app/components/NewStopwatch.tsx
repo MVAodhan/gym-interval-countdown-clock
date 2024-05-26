@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { forwardRef, useEffect, useRef, useState } from "react";
 
 import { Howl } from "howler";
 import { Antonio } from "next/font/google";
@@ -18,6 +18,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 
+import { nanoid } from "nanoid";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -62,10 +63,26 @@ const Stopwatch = () => {
   const timerRef = useRef<any>();
   const transitionTimerRef = useRef<any>();
 
+  const [addPhases, setAddPhases] = useState<{}[]>([]);
+
   const setRef = useRef(0);
   const setDisplayRef = useRef(0);
   const phaseRef = useRef(0);
   const phaseDisplayRef = useRef(0);
+
+  const handleAddPhase = () => {
+    const id = nanoid();
+    const addPhase = {
+      id: id,
+      sets: 0,
+      rest: false,
+      restMS: 0,
+    };
+
+    setAddPhases([...addPhases, addPhase]);
+
+    return id;
+  };
 
   const getMinutes = (ms: number) =>
     ("0" + Math.floor((ms / 60 / 1000) % 60)).slice(-2);
@@ -339,13 +356,19 @@ const Stopwatch = () => {
             Reset
           </button>
         }
-        <MyDrawer />
+        <MyDrawer handleAddPhases={handleAddPhase} addPhases={addPhases} />
       </div>
     </div>
   );
 };
 
-const MyDrawer = () => {
+const MyDrawer = ({
+  handleAddPhases,
+  addPhases,
+}: {
+  handleAddPhases: () => string;
+  addPhases: any;
+}) => {
   return (
     <div>
       <Drawer>
@@ -354,7 +377,22 @@ const MyDrawer = () => {
           <DrawerHeader className="flex justify-center">
             <DrawerTitle>Set Phases, Sets and Rests </DrawerTitle>
           </DrawerHeader>
-          <div className="w-full flex flex-col items-center"></div>
+          <div className="w-full flex flex-col items-center">
+            <div className="flex w-full justify-end pr-2">
+              <Button
+                onClick={() => {
+                  const id = handleAddPhases();
+                }}
+              >
+                Add Phase
+              </Button>
+            </div>
+            <div className="flex flex-col gap-2 my-2">
+              {addPhases.map((phase: any) => (
+                <PhaseInput key={phase.id} id={phase.id} />
+              ))}
+            </div>
+          </div>
           <DrawerFooter>
             <Button>Submit</Button>
             <DrawerClose>
@@ -363,6 +401,35 @@ const MyDrawer = () => {
           </DrawerFooter>
         </DrawerContent>
       </Drawer>
+    </div>
+  );
+};
+
+const PhaseInput = ({ id }: { id: string }) => {
+  return (
+    <div className="flex  gap-2 ">
+      <div className="flex items-center gap-2">
+        <div className="flex  items-center">
+          <label className="">Set </label>
+        </div>
+        <Input className="focus-visible:ring-0" type="number" />
+      </div>
+      <div className="flex">
+        <div className="flex w-[100px] items-center">
+          <label className="">Set time</label>
+        </div>
+        <Input className="focus-visible:ring-0" type="number" />
+      </div>
+      <div className="flex items-center gap-2 ">
+        <div className="flex  items-center">Rest</div>
+        <Checkbox />
+      </div>
+      <div className="flex">
+        <div className="flex w-[100px] items-center">
+          <label className="">Rest time</label>
+        </div>
+        <Input className="focus-visible:ring-0" type="number" />
+      </div>
     </div>
   );
 };
