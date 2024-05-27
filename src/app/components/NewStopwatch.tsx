@@ -56,7 +56,6 @@ const Stopwatch = () => {
   const [transitionMS, setTransitionMS] = useState(6000);
 
   const [isRest, setIsRest] = useState(false);
-  const [isTransition, setIsTransition] = useState(false);
 
   const [isTransitionRunning, setIsTransitionRunning] = useState(false);
 
@@ -327,11 +326,11 @@ const Stopwatch = () => {
           {isRunning && !isRest && `SET : ${setDisplayRef.current + 1}`}
         </div>
         <div className="text-4xl">{isRest && `REST`}</div>
-        <div className="text-4xl">{isTransition && `Transition`}</div>
+        <div className="text-4xl">{isTransitionRunning && `Transition`}</div>
 
         <div className="flex flex-col gap-1">
-          <div>{formatTime(time)}</div>
-          <div>{formatTime(transitionTime)}</div>
+          {!isTransitionRunning && <div>{<div>{formatTime(time)}</div>}</div>}
+          {isTransitionRunning && <div>{formatTime(transitionTime)}</div>}
         </div>
       </div>
       <div className="w-full flex justify-between">
@@ -390,18 +389,9 @@ const MyDrawer = ({
       const setTime = formData.get(`set-time-${id}`);
       const rest = formData.get(`rest-${id}`);
       const restTime = formData.get(`rest-time-${id}`);
-      // console.log("set", set, typeof set);
-      // console.log("set time", setTime, typeof setTime);
-      // console.log("rest", rest, typeof rest);
-      // console.log("rest time", restTime, typeof restTime);
 
       let timeMS = Number(set) * Number(setTime);
 
-      // const inputData: InputData = [
-      //   { timeMS: 12000, sets: 2, rests: true, restMS: 5000 },
-      //   { timeMS: 14000, sets: 2, rests: true, restMS: 5000 },
-      //   { timeMS: 24000, sets: 3, rests: true, restMS: 5000 },
-      // ];
       let phase = {
         timeMS: timeMS,
         sets: Number(set),
