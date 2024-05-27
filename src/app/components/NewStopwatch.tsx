@@ -195,7 +195,7 @@ const Stopwatch = () => {
       setPhases(newPhases);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [inputDataState]);
 
   useEffect(() => {
     if (isRunning) {
@@ -311,6 +311,9 @@ const Stopwatch = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [time]);
 
+  console.log("inputDataState", inputDataState);
+  console.log("phases", phases);
+
   return (
     <div className=" w-4/5 flex flex-col">
       <div
@@ -356,7 +359,11 @@ const Stopwatch = () => {
             Reset
           </button>
         }
-        <MyDrawer handleAddPhases={handleAddPhase} addPhases={addPhases} />
+        <MyDrawer
+          handleAddPhases={handleAddPhase}
+          addPhases={addPhases}
+          setInputDataState={setInputDataState}
+        />
       </div>
     </div>
   );
@@ -365,10 +372,49 @@ const Stopwatch = () => {
 const MyDrawer = ({
   handleAddPhases,
   addPhases,
+  setInputDataState,
 }: {
   handleAddPhases: () => string;
   addPhases: any;
+  setInputDataState: any;
 }) => {
+  const handleSubmit = (formData: any) => {
+    let phaseIds: string[] = [];
+    for (let phase of addPhases) {
+      phaseIds = [...phaseIds, phase.id];
+    }
+
+    let newInputData: any[] = [];
+    for (let id of phaseIds) {
+      const set = formData.get(`set-${id}`);
+      const setTime = formData.get(`set-time-${id}`);
+      const rest = formData.get(`rest-${id}`);
+      const restTime = formData.get(`rest-time-${id}`);
+      // console.log("set", set, typeof set);
+      // console.log("set time", setTime, typeof setTime);
+      // console.log("rest", rest, typeof rest);
+      // console.log("rest time", restTime, typeof restTime);
+
+      let timeMS = Number(set) * Number(setTime);
+
+      // const inputData: InputData = [
+      //   { timeMS: 12000, sets: 2, rests: true, restMS: 5000 },
+      //   { timeMS: 14000, sets: 2, rests: true, restMS: 5000 },
+      //   { timeMS: 24000, sets: 3, rests: true, restMS: 5000 },
+      // ];
+      let phase = {
+        timeMS: timeMS,
+        sets: Number(set),
+        rest: rest ? true : false,
+        restMS: rest ? Number(restTime) : Number(0),
+      };
+
+      newInputData = [...newInputData, phase];
+    }
+
+    setInputDataState(newInputData);
+  };
+
   return (
     <div>
       <Drawer>
@@ -387,14 +433,14 @@ const MyDrawer = ({
                 Add Phase
               </Button>
             </div>
-            <div className="flex flex-col gap-2 my-2">
+            <form className="flex flex-col gap-2 my-2" action={handleSubmit}>
               {addPhases.map((phase: any) => (
                 <PhaseInput key={phase.id} id={phase.id} />
               ))}
-            </div>
+              <Button>Confirm</Button>
+            </form>
           </div>
           <DrawerFooter>
-            <Button>Submit</Button>
             <DrawerClose>
               <Button variant="outline">Cancel</Button>
             </DrawerClose>
@@ -410,25 +456,37 @@ const PhaseInput = ({ id }: { id: string }) => {
     <div className="flex  gap-2 ">
       <div className="flex items-center gap-2">
         <div className="flex  items-center">
-          <label className="">Set </label>
+          <label className="">Set</label>
         </div>
-        <Input className="focus-visible:ring-0" type="number" />
+        <Input
+          className="focus-visible:ring-0"
+          type="number"
+          name={`set-${id}`}
+        />
       </div>
       <div className="flex">
         <div className="flex w-[100px] items-center">
           <label className="">Set time</label>
         </div>
-        <Input className="focus-visible:ring-0" type="number" />
+        <Input
+          className="focus-visible:ring-0"
+          type="number"
+          name={`set-time-${id}`}
+        />
       </div>
       <div className="flex items-center gap-2 ">
         <div className="flex  items-center">Rest</div>
-        <Checkbox />
+        <Checkbox name={`rest-${id}`} />
       </div>
       <div className="flex">
         <div className="flex w-[100px] items-center">
           <label className="">Rest time</label>
         </div>
-        <Input className="focus-visible:ring-0" type="number" />
+        <Input
+          className="focus-visible:ring-0"
+          type="number"
+          name={`rest-time-${id}`}
+        />
       </div>
     </div>
   );
